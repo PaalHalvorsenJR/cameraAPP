@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Take a picture</h1>
+    <button id="capture">Capture</button>
+    <div id="preview"></div>
+    <script>
+        const capture = document.getElementById('capture');
+        capture.addEventListener('click', () => {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    const video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.autoplay = true;
+                    document.body.appendChild(video);
+                    
+                    video.addEventListener('click', () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        canvas.getContext('2d').drawImage(video, 0, 0);
+                        
+                        const dataUrl = canvas.toDataURL('image/png');
+                        fetch('/upload', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ image: dataUrl })
+                        }).then(response => response.json())
+                          .then(data => {
+                              console.log(data.message);
+                              const preview = document.getElementById('preview');
+                              const img = document.createElement('img');
+                              img.src = dataUrl;
+                              preview.appendChild(img);
+                          }).catch(err => console.error(err));
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                });
+        });
+    </script>
+</body>
+</html>
